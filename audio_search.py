@@ -8,7 +8,6 @@ import pandas as pd
 import re
 from nltk.corpus import stopwords
 import nltk
-import os
 import torch
 
 # Download NLTK stopwords if not already downloaded
@@ -87,8 +86,8 @@ def audio_search_page(api_key):
         except Exception as e:
             st.error(f"Error deleting index: {str(e)}")
 
-    # Accept file path input for the Parquet file
-    parquet_file_path = st.text_input("📁 Enter the path of the Parquet file containing audio data", key="parquet_audio_path")
+    # **New**: File uploader for Parquet file
+    parquet_file = st.file_uploader("📤 Upload the Parquet file containing audio data", type=["parquet"], key="parquet_audio")
 
     # Define utility functions
     def preprocess_text(text):
@@ -206,20 +205,12 @@ def audio_search_page(api_key):
         else:
             st.write("No results found for your query.")
 
-    # Handle Parquet file loading and embedding creation based on file path
-    if parquet_file_path:
+    # Handle Parquet file upload and embedding creation
+    if parquet_file is not None:
         try:
-            # Strip any quotes from the path and handle Windows-style paths
-            parquet_file_path = parquet_file_path.strip().strip('"')
-            
-            # Validate if the path exists
-            if os.path.exists(parquet_file_path):
-                # Load the Parquet file from the path
-                df = pd.read_parquet(parquet_file_path).head(75)
-                st.session_state.df = df  # Store the DataFrame in session state
-                st.write("Dataset loaded successfully.")
-            else:
-                st.error(f"File does not exist at the given path: {parquet_file_path}")
+            df = pd.read_parquet(parquet_file).head(75)
+            st.session_state.df = df  # Store the DataFrame in session state
+            st.write("Dataset loaded successfully.")
 
             if st.button("🔍 Preview Data"):
                 display_first_5_audios(df)
@@ -246,4 +237,4 @@ def audio_search_page(api_key):
         if query_text and st.button("🔎 Search Similar Audio"):
             search_similar_audios(query_text, st.session_state.df)
     else:
-        st.write("Please provide the file path and process it before searching for similar audio.")
+        st.write("Please upload and process a Parquet file before searching for similar audio.")
